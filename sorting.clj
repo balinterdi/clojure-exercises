@@ -1,8 +1,8 @@
 (ns sorting
   (:use clojure.contrib.test-is))
 
-(defn swap-if [elts func]  
-  (let [a (first elts) 
+(defn swap-if [elts func]
+  (let [a (first elts)
         b (last elts)]
     (cond (< (count elts) 2) elts
       (func a b) (list b a)
@@ -11,12 +11,12 @@
 )
 
 ; swaps all pairs if func is true for the first of the pair
-(defn swap-all [elts func swapped i]
+(defn swap-all [elts func swapped]
   (if (< (count elts) 2)
     (concat swapped elts)
     (let [[a b] (swap-if (take 2 elts) func)]
       ;(println (str "A: " a " B: " b " Elts: " elts " Swapped: " swapped))
-      (swap-all (conj (drop 2 elts) b) func (conj swapped a) (inc i))
+      (swap-all (conj (drop 2 elts) b) func (conj swapped a))
     )
   )
 )
@@ -25,14 +25,18 @@
 ; 1. swap-all is executed on elts
 ; 2. the last element is consed with sorted
 ; 3. bubble-sort is called on the elts minus the last element
-(defn bubble-sort [elts sorted]
-  (if (empty? elts)
-    sorted
-    (let [swapped (swap-all elts > [] 0) 
-          done (last swapped)
-          others (butlast swapped)]
-      ;(println (str "Done: " done " others: " others " Elts: " elts " Sorted: " sorted))
-      (bubble-sort others (cons done sorted))
+(defn bubble-sort
+  ([elts]
+    (bubble-sort elts []))
+  ([elts sorted]
+    (if (empty? elts)
+      sorted
+      (let [swapped (swap-all elts > [])
+            done (last swapped)
+            others (butlast swapped)]
+        ;(println (str "Done: " done " others: " others " Elts: " elts " Sorted: " sorted))
+        (bubble-sort others (cons done sorted))
+      )
     )
   )
 )
@@ -45,20 +49,21 @@
 )
 
 (deftest test-swap-all
-  (is (= [] (swap-all [] > [] 0)))
-  (is (= [1] (swap-all [1] > [] 0)))
-  (is (= [1 2] (swap-all [1 2] > [] 0)))
-  (is (= [1 2] (swap-all [2 1] > [] 0)))
-  (is (= [2 1 3] (swap-all [3 2 1] > [] 0)))
-  (is (= [1 2 3] (swap-all [2 1 3] > [] 0)))
-  (is (= [1 2 3 4] (swap-all [2 1 4 3] > [] 0)))
+  (is (= [] (swap-all [] > [])))
+  (is (= [1] (swap-all [1] > [])))
+  (is (= [1 2] (swap-all [1 2] > [])))
+  (is (= [1 2] (swap-all [2 1] > [])))
+  (is (= [2 1 3] (swap-all [3 2 1] > [])))
+  (is (= [1 2 3] (swap-all [2 1 3] > [])))
+  (is (= [1 2 3 4] (swap-all [2 1 4 3] > [])))
 )
 
 (deftest test-bubble-sort
-  (is (= [] (bubble-sort [] [])))
-  (is (= [1 2 3] (bubble-sort [3 1 2] [])))
-  (is (= [1 2 3] (bubble-sort [3 2 1] [])))
-  (is (= [1 2 3] (bubble-sort [2 1 3] [])))
+  (is (= [] (bubble-sort [])))
+  (is (= [1 2 3] (bubble-sort [3 1 2])))
+  (is (= [1 2 3] (bubble-sort [3 2 1])))
+  (is (= [1 2 3] (bubble-sort [2 1 3])))
+  (is (= (range 10) (bubble-sort (reverse (range 10)))))
 )
 
 (run-tests)
