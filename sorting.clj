@@ -12,7 +12,7 @@
 
 ; swaps all pairs if func is true for the first of the pair
 (defn swap-all [elts func swapped i]
-  (if (or (< (count elts) 2) (= i 10))
+  (if (< (count elts) 2)
     (concat swapped elts)
     (let [[a b] (swap-if (take 2 elts) func)]
       ;(println (str "A: " a " B: " b " Elts: " elts " Swapped: " swapped))
