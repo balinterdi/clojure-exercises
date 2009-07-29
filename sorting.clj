@@ -14,7 +14,7 @@
     (concat swapped elts)
     (let [[a b] (swap-if (take 2 elts) func)]
       ;(println (str "A: " a " B: " b " Elts: " elts " Swapped: " swapped))
-      (swap-all (conj (drop 2 elts) b) func (conj swapped a))
+      (swap-all-not-perfect (conj (drop 2 elts) b) func (conj swapped a))
     )
   )
 )
@@ -70,24 +70,12 @@
   )
 )
 
-(defn bubble-sort
-  "A bubble sort with tail call optimization (TCO)"
-  ([elts]
-    (bubble-sort elts []))
-  ([elts sorted]
-    (if (empty? elts)
-      sorted
-      (let [swapped (swap-all elts > [])
-            done (last swapped)
-            others (butlast swapped)]
-        ;(println (str "Done: " done " others: " others " Elts: " elts " Sorted: " sorted))
-        (recur others (lazy-seq (cons done sorted)))
-      )
-    )
-  )
+(defn bubble-sort [elts]
+  "A bubble sort using lazy sequences"
+  (if (empty? elts)
+    []
+    (nth (iterate (fn [e] (swap-all e >)) elts) (dec (count elts))))
 )
-
-
 
 (deftest test-swap-if
   (is (= [] (swap-if [] >)))
@@ -106,13 +94,13 @@
   (is (= [1 2 3 4] (swap-all [2 1 4 3] > [])))
 )
 
-;(deftest test-bubble-sort
-;  (is (= [] (bubble-sort [])))
-;  (is (= [1 2 3] (bubble-sort [3 1 2])))
-;  (is (= [1 2 3] (bubble-sort [3 2 1])))
-;  (is (= [1 2 3] (bubble-sort [2 1 3])))
-;  (is (= (range 10) (bubble-sort (reverse (range 10)))))
-;)
+(deftest test-bubble-sort
+  (is (= [] (bubble-sort [])))
+  (is (= [1 2 3] (bubble-sort [3 1 2])))
+  (is (= [1 2 3] (bubble-sort [3 2 1])))
+  (is (= [1 2 3] (bubble-sort [2 1 3])))
+  (is (= (range 10) (bubble-sort (reverse (range 10)))))
+)
 
 (run-tests)
 
