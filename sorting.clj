@@ -2,7 +2,6 @@
   (:use clojure.contrib.test-is))
 
 (defn swap-even [coll]
-  ;FIXME: apply concat will need to be made lazy with lazy-cat, but apply lazy-cat gives an error
   (let [swapped (apply concat (map (fn [[x y]] (if (> x y) [y x] [x y])) (partition 2 coll)))]
     (if (odd? (count coll))
       (lazy-cat swapped (take 1 (drop (dec (count coll)) coll)))
@@ -12,7 +11,6 @@
 )
 
 (defn swap-odd [coll]
-  ;FIXME: apply concat will need to be made lazy with lazy-cat, but apply lazy-cat gives an error
   (let [swapped (apply concat (map (fn [[x y]] (if (> x y) [y x] [x y])) (partition 2 (rest coll))))]
     (if (even? (count coll))
       (lazy-cat (take 1 coll) swapped (take 1 (drop (dec (count coll)) coll)))
@@ -26,7 +24,7 @@
   (if (empty? coll)
     []
     (let [sorter (fn [[coll n]]
-          (if (even? n) [(swap-even coll) (inc n)] [(swap-odd coll) (inc n)]))]
+          (let [swapper (if (even? n) swap-even swap-odd)] [(swapper coll) (inc n)]))]
         (first (nth (iterate sorter [coll 0]) (count coll)))
     )
   )
