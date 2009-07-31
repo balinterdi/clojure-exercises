@@ -1,56 +1,54 @@
 (ns sorting
   (:use clojure.contrib.test-is))
 
-(defn swap-in-coll [coll index func]
-  (cond
-    (nil? (nth coll (inc index) nil)) coll
-    (func (nth coll index) (nth coll (inc index)))
-      (let [lead (take index coll)
-            swapped-ahead (take 1 (drop (inc index) coll))
-            swapped-behind (take 1 (drop index coll))
-            rest (drop (+ 2 index) coll)]
-            (concat lead swapped-ahead swapped-behind rest)
-      )
-    :else coll
+(defn swap-even [coll]
+  ;FIXME: apply concat will need to be made lazy with lazy-cat, but apply lazy-cat gives an error
+  (let [swapped (apply concat (map (fn [[x y]] (if (> x y) [y x] [x y])) (partition 2 coll)))]
+    (if (odd? (count coll))
+      (lazy-cat swapped (take 1 (drop (dec (count coll)) coll)))
+      swapped
+    )
   )
 )
 
-(defn swap-all
-  ([coll func]
-    (swap-all coll 0 func))
-  ([coll index func]
-    (if (= index (count coll)) coll
-      (recur (swap-in-coll coll index func) (inc index) func)))
+(defn swap-odd [coll]
+  ;FIXME: apply concat will need to be made lazy with lazy-cat, but apply lazy-cat gives an error
+  (let [swapped (apply concat (map (fn [[x y]] (if (> x y) [y x] [x y])) (partition 2 (rest coll))))]
+    (if (even? (count coll))
+      (lazy-cat (take 1 coll) swapped (take 1 (drop (dec (count coll)) coll)))
+      (lazy-cat (take 1 coll) swapped)
+    )
+  )
 )
 
-(defn bubble-sort [elts]
+(defn bubble-sort [coll]
   "A bubble sort using lazy sequences"
-  (if (empty? elts)
+  (if (empty? coll)
     []
-    (nth (iterate (fn [e] (swap-all e >)) elts) (dec (count elts))))
+    (let [sorter (fn [[coll n]]
+          (if (even? n) [(swap-even coll) (inc n)] [(swap-odd coll) (inc n)]))]
+        (first (nth (iterate sorter [coll 0]) (count coll)))
+    )
+  )
 )
 
-(deftest test-swap-all
-  (is (= [] (swap-all [] >)))
-  (is (= [1] (swap-all [1] >)))
-  (is (= [1 2] (swap-all [1 2] >)))
-  (is (= [1 2] (swap-all [2 1] >)))
-  (is (= [2 1 3] (swap-all [3 2 1] >)))
-  (is (= [1 2 3] (swap-all [2 1 3] >)))
-  (is (= [1 2 3 4] (swap-all [2 1 4 3] >)))
+(deftest test-swap-even
+  (is (= [] (swap-even [])))
+  (is (= [1] (swap-even [1])))
+  (is (= [1 2] (swap-even [1 2])))
+  (is (= [1 2] (swap-even [2 1])))
+  (is (= [3 4 1 2] (swap-even [4 3 2 1])))
+  (is (= [4 5 2 3 1] (swap-even [5 4 3 2 1])))
 )
 
-(deftest test-swap-in-coll
-  (is (= [] (swap-in-coll [] 0 >)))
-  (is (= [] (swap-in-coll [] 2 >)))
-  (is (= [1] (swap-in-coll [1] 0 >)))
-  (is (= [1] (swap-in-coll [1] 2 >)))
-  (is (= [1 2] (swap-in-coll [1 2] 0 >)))
-  (is (= [1 2] (swap-in-coll [2 1] 0 >)))
-  (is (= [2 1] (swap-in-coll [2 1] 1 >)))
-  (is (= [4 2 3 1] (swap-in-coll [4 3 2 1] 1 >)))
-  (is (= [4 3 1 2] (swap-in-coll [4 3 2 1] 2 >)))
-  (is (= [3 4 2 1] (swap-in-coll [4 3 2 1] 0 >)))
+(deftest test-swap-odd
+  (is (= [] (swap-odd [])))
+  (is (= [1] (swap-odd [1])))
+  (is (= [1 2] (swap-odd [1 2])))
+  (is (= [1 2] (swap-odd [1 2])))
+  (is (= [3 1 2] (swap-odd [3 2 1])))
+  (is (= [4 2 3 1] (swap-odd [4 3 2 1])))
+  (is (= [5 3 4 1 2] (swap-odd [5 4 3 2 1])))
 )
 
 (deftest test-bubble-sort
@@ -63,6 +61,8 @@
 
 (run-tests)
 
+; with non-lazy-sequences:
 ;(time (take 5 (bubble-sort-no-tco (reverse (range 1000))))) ; 23 seconds
 ;(time (take 5 (bubble-sort-tco (reverse (range 1000))))) ; 22 seconds
-;(time (take 5 (bubble-sort (reverse (range 1000))))) ; 769 seconds :(
+; with lazy-sequences:
+;(time (take 5 (bubble-sort (reverse (range 1000))))) ; 3.69 seconds !!!
